@@ -150,6 +150,12 @@ dialog h3{font:700 16px var(--px)}
 .demo{font-size:13px;color:var(--mut)}.demo b{color:var(--ink)}
 .sess{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:14px;color:var(--mut)}
 .sess b{color:var(--ink)}
+.slot.m::before{content:"★";position:absolute;left:-4px;top:-6px;width:17px;height:17px;border-radius:6px;background:var(--Legendary);color:#2a1a00;font:700 11px/17px var(--body);text-align:center;z-index:1}
+.slot.m{box-shadow:0 0 0 2px var(--Legendary) inset}
+.dots i.m{box-shadow:0 0 0 2px var(--Legendary)}
+.tile .sm{position:absolute;top:6px;left:6px;width:20px;height:20px;border-radius:7px;background:var(--Legendary);color:#2a1a00;font:700 12px/20px var(--body)}
+.tile .star{width:auto;padding:0 6px}
+body.mm .slot:not(.d):not(.ro),body.mm .tile.vt.zero:not(.ro){opacity:.35}
 #dlg2{padding:0;width:min(440px,94vw);background:transparent;border:0}
 #dlg2 .card{margin:0}
 #dlg2 .btn{width:100%;margin-top:10px}
@@ -188,7 +194,7 @@ dialog h3{font:700 16px var(--px)}
    <div class="ring" id="ring"><b id="num"></b></div>
    <div>
     <h1>Tu colección de Override</h1>
-    <p>25 espíritus y todas sus variantes. Toca cada casilla cuando la consigas y marca con ★ los que ya tienes dominados.</p>
+    <p>25 espíritus y todas sus variantes. Toca cada casilla cuando la consigas. Con «★ Marcar dominados» activo, toca una casilla que tengas para darle o quitarle la ★.</p>
     <div class="me">Vas <b id="myrank">–</b> de <span id="total">–</span> en el grupo</div> <div class="me">★ <b id="mydom">0</b> dominados</div>
     <div class="sess">Sesión iniciada como <b id="uname"></b><button class="out" id="out">Cerrar sesión</button></div>
    </div>
@@ -196,6 +202,7 @@ dialog h3{font:700 16px var(--px)}
   <details><summary>¿Qué hace cada variante?</summary><div class="leg" id="leg"></div></details>
   <div class="tools"><div class="seg" id="seg1"></div><div class="seg subseg" id="sub1"></div><span class="cap" id="cap1"></span></div>
   <div class="chips" id="chips"></div>
+  <p class="hint" id="domhint" hidden><b style="color:var(--Legendary)">Modo dominar:</b> toca una casilla que ya tengas para marcarla como dominada o quitarle la ★. Vuelve a pulsar el botón para seguir marcando casillas normalmente.</p>
   <p class="hint" id="whohint" hidden><b>Modo amigos:</b> el número verde indica cuántos amigos tienen esa casilla. Tócala para ver quiénes.</p>
   <div class="grid" id="grid"></div>
   <p class="note">Las casillas con borde discontinuo (Trick or Treat) están anunciadas pero, según las fuentes, aún no se pueden conseguir. Mega Man solo tiene versión base.</p>
@@ -272,14 +279,15 @@ const key=(s,i)=>s[1]+":"+i;
 const ALL=[];S.forEach(s=>s[4].forEach((_,i)=>ALL.push(key(s,i))));
 const REL=ALL.filter(k=>!(k.endsWith(":5")&&!k.startsWith("crown:")));
 const FR=[["Marta",98],["Álex",71],["Dani",54],["Lucía",33],["Pablo",17]].map(([name,n],j)=>({id:"f"+j,name,set:new Set(shuf(REL,rng(j*7919+13)).slice(0,n))}));
-FR.forEach((f,j)=>{const r=rng(j*31+5);f.dom=new Set(S.filter(s=>f.set.has(key(s,0))&&r()<.5).map(s=>s[1]))});
-let gmode="group",me=null,mine=null,dom=null,view="list",filter="all",who=false,cur=null,only=false,det=null;
-try{const d=JSON.parse(localStorage.getItem("dom3"));if(Array.isArray(d))dom=new Set(d)}catch(e){}
+FR.forEach((f,j)=>{const r=rng(j*31+5);f.dom=new Set([...f.set].filter(()=>r()<.3))});
+let gmode="group",me=null,mine=null,dom=null,view="list",filter="all",who=false,cur=null,only=false,det=null,mm=false;
+try{const d=JSON.parse(localStorage.getItem("dom4"));if(Array.isArray(d))dom=new Set(d)}catch(e){}
 try{view=localStorage.getItem("view3")||"list";gmode=localStorage.getItem("gmode3")||"group";me=localStorage.getItem("sess3")}catch(e){}
 try{mine=JSON.parse(localStorage.getItem("mine3"))}catch(e){}
 if(!mine){mine={};shuf(REL,rng(99)).slice(0,22).forEach(k=>mine[k]=true)}
-if(!dom)dom=new Set(S.filter(s=>mine[key(s,0)]).slice(0,3).map(s=>s[1]));
-const save=()=>{try{localStorage.setItem("mine3",JSON.stringify(mine));localStorage.setItem("dom3",JSON.stringify([...dom]))}catch(e){}};
+if(!dom)dom=new Set(Object.keys(mine).filter(k=>mine[k]).slice(0,6));
+const save=()=>{try{localStorage.setItem("mine3",JSON.stringify(mine));localStorage.setItem("dom4",JSON.stringify([...dom]))}catch(e){}};
+function tap(s,i){const k=key(s,i);if(who)return openWho(s,i);if(mm){if(mine[k]){dom.has(k)?dom.delete(k):dom.add(k);save();refresh()}return}mine[k]=!mine[k];if(!mine[k])dom.delete(k);save();refresh()}
 const refresh=()=>{grid();stats();if(det&&$("dlg2").open)renderDet()};
 const $=id=>document.getElementById(id);
 const done=s=>s[4].filter((_,i)=>mine[key(s,i)]).length;
@@ -289,34 +297,34 @@ const missing=f=>[...f.set].filter(k=>!mine[k]).length;
 $("leg").innerHTML=V.map((v,i)=>`<div style="--c:var(--v${i})"><i></i><span><b>${v[0]}.</b> ${v[2]}</span></div>`).join("");
 
 function card(s,own,mode,isDom){
- const dm=isDom?isDom(s[1]):dom.has(s[1]);
+ const isD=isDom||(k=>dom.has(k));
  const t=s[4].length,n=s[4].filter((_,i)=>own(key(s,i))).length,fr=mode=="friend";
  const c=document.createElement("article");
- c.className="card"+(n==t?" full":"")+(dm?" mast":"");c.style.setProperty("--c",`var(--${s[2]})`);
+ const dn=s[4].filter((_,i)=>own(key(s,i))&&isD(key(s,i))).length;
+ c.className="card"+(n==t?" full":"");c.style.setProperty("--c",`var(--${s[2]})`);
  const tag=fr?"div":"button";let sl="";
  for(let i=0;i<6;i++){
   if(i>=t){sl+=`<div class="slot none" aria-hidden="true"></div>`;continue}
-  const k=key(s,i),o=own(k),soon=i==5&&s[0]!="Crown",need=fr&&o&&!mine[k];
+  const k=key(s,i),o=own(k),soon=i==5&&s[0]!="Crown",need=fr&&o&&!mine[k],m=o&&isD(k);
   const cnt=!fr&&who&&!o?FR.filter(f=>f.set.has(k)).length:0;
-  sl+=`<${tag} class="slot${o?" d":""}${soon?" soon":""}${need?" need":""}${fr?" ro":""}" data-i="${i}" style="--v:var(--v${i})" ${fr?"":`aria-pressed="${!!o}"`} aria-label="${s[0]} ${V[i][0]}${need?" (a ti te falta)":""}" title="${V[i][0]}"><img src="${img(s,i)}" alt="" loading="lazy">${cnt?`<span class="cnt">${cnt}</span>`:""}</${tag}>`;
+  sl+=`<${tag} class="slot${o?" d":""}${m?" m":""}${soon?" soon":""}${need?" need":""}${fr?" ro":""}" data-i="${i}" style="--v:var(--v${i})" ${fr?"":`aria-pressed="${!!o}"`} aria-label="${s[0]} ${V[i][0]}${m?", dominado":""}${need?" (a ti te falta)":""}" title="${V[i][0]}"><img src="${img(s,i)}" alt="" loading="lazy">${cnt?`<span class="cnt">${cnt}</span>`:""}</${tag}>`;
  }
- c.innerHTML=`<div class="head"><div><h3>${s[0]}</h3><span class="rar">${RN[s[2]]} · ${n}/${t}</span></div><div class="acts">${fr?(dm?`<span class="domtag">★ Dominado</span>`:""):`<button class="dom" aria-pressed="${dm}" title="Marcar como dominado">★ ${dm?"Dominado":"Dominar"}</button><button class="all">${n==t?"Quitar":"Todas"}</button>`}</div></div><p class="eff">${s[3]}</p><div class="slots">${sl}</div><div class="lab">${SHORT.map(x=>`<span>${x}</span>`).join("")}</div>`;
+ c.innerHTML=`<div class="head"><div><h3>${s[0]}</h3><span class="rar">${RN[s[2]]} · ${n}/${t}</span></div><div class="acts">${dn?`<span class="domtag" title="Casillas dominadas">★ ${dn}</span>`:""}${fr?"":`<button class="all">${n==t?"Quitar":"Todas"}</button>`}</div></div><p class="eff">${s[3]}</p><div class="slots">${sl}</div><div class="lab">${SHORT.map(x=>`<span>${x}</span>`).join("")}</div>`;
  c.querySelectorAll("img").forEach(m=>m.onerror=()=>m.replaceWith(s[0][0]));
  if(!fr){
   c.querySelectorAll(".slot[data-i]").forEach(b=>b.onclick=()=>{
-   const i=+b.dataset.i;
-   if(who)return openWho(s,i);
-   const k=key(s,i);mine[k]=!mine[k];save();refresh();
+   tap(s,+b.dataset.i);
   });
-  c.querySelector(".all").onclick=()=>{const v=n!=t;s[4].forEach((_,i)=>mine[key(s,i)]=v);save();refresh()};
-  c.querySelector(".dom").onclick=()=>{dom.has(s[1])?dom.delete(s[1]):dom.add(s[1]);save();refresh()};
+  c.querySelector(".all").onclick=()=>{const v=n!=t;s[4].forEach((_,i)=>{mine[key(s,i)]=v;if(!v)dom.delete(key(s,i))});save();refresh()};
  }
  return c;
 }
 function chips(){
  const o=[["all","Todos"],...Object.keys(RN).map(k=>[k,RN[k]]),["todo","Con pendientes"],["dom","★ Dominados"],["nodom","Sin dominar"]];
- $("chips").innerHTML=`<button id="whob" aria-pressed="${who}">👥 Quién lo tiene</button>`+o.map(([k,t])=>`<button data-k="${k}" aria-pressed="${filter==k}">${RN[k]?`<i style="--c:var(--${k})"></i>`:""}${t}</button>`).join("");
- $("whob").onclick=()=>{who=!who;chips();grid()};
+ $("chips").innerHTML=`<button id="domb" aria-pressed="${mm}">★ Marcar dominados</button><button id="whob" aria-pressed="${who}">👥 Quién lo tiene</button>`+o.map(([k,t])=>`<button data-k="${k}" aria-pressed="${filter==k}">${RN[k]?`<i style="--c:var(--${k})"></i>`:""}${t}</button>`).join("");
+ $("whob").onclick=()=>{who=!who;if(who)mm=false;chips();grid()};
+ $("domb").onclick=()=>{mm=!mm;if(mm)who=false;chips();grid()};
+ $("domhint").hidden=!mm;document.body.classList.toggle("mm",mm);
  $("chips").querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{filter=b.dataset.k;chips();grid()});
  $("whohint").hidden=!who;
 }
@@ -333,29 +341,29 @@ function seg(){
  });
 }
 function tile(s,own,mode,isDom){
- const t=s[4].length,n=s[4].filter((_,i)=>own(key(s,i))).length,fr=mode=="friend",dm=isDom?isDom(s[1]):dom.has(s[1]);
+ const t=s[4].length,n=s[4].filter((_,i)=>own(key(s,i))).length,fr=mode=="friend",isD=isDom||(k=>dom.has(k)),dn=s[4].filter((_,i)=>own(key(s,i))&&isD(key(s,i))).length;
  const nd=fr&&s[4].some((_,i)=>own(key(s,i))&&!mine[key(s,i)]);
  const wc=!fr&&who?s[4].reduce((a,_,i)=>a+(!mine[key(s,i)]&&FR.some(f=>f.set.has(key(s,i)))?1:0),0):0;
  const best=[...s[4].keys()].reverse().find(i=>own(key(s,i)))??0;
  const b=document.createElement("button");
  b.className="tile"+(n==t?" full":"")+(n?"":" zero")+(nd?" need":"");b.style.setProperty("--c",`var(--${s[2]})`);
- b.setAttribute("aria-label",`${s[0]}, ${n} de ${t} variantes${dm?", dominado":""}`);
- b.innerHTML=`<span class="pic"><img src="${img(s,best)}" alt="" loading="lazy"></span><b>${s[0]}</b><span class="tc">${n}/${t}</span><span class="dots">${s[4].map((_,i)=>`<i class="${own(key(s,i))?"on":""}${fr&&own(key(s,i))&&!mine[key(s,i)]?" nd":""}" style="--v:var(--v${i})"></i>`).join("")}</span>${dm?`<span class="star" aria-hidden="true">★</span>`:""}${wc?`<span class="wc" title="Variantes que te faltan y tiene algún amigo">${wc}</span>`:""}`;
+ b.setAttribute("aria-label",`${s[0]}, ${n} de ${t} variantes${dn?`, ${dn} dominadas`:""}`);
+ b.innerHTML=`<span class="pic"><img src="${img(s,best)}" alt="" loading="lazy"></span><b>${s[0]}</b><span class="tc">${n}/${t}</span><span class="dots">${s[4].map((_,i)=>`<i class="${own(key(s,i))?"on":""}${own(key(s,i))&&isD(key(s,i))?" m":""}${fr&&own(key(s,i))&&!mine[key(s,i)]?" nd":""}" style="--v:var(--v${i})"></i>`).join("")}</span>${dn?`<span class="star" aria-hidden="true">★${dn}</span>`:""}${wc?`<span class="wc" title="Variantes que te faltan y tiene algún amigo">${wc}</span>`:""}`;
  b.querySelector("img").onerror=e=>e.target.replaceWith(s[0][0]);
  b.onclick=()=>openDet(s,mode);
  return b;
 }
 function vtile(s,i,own,mode,isDom){
- const k=key(s,i),o=own(k),fr=mode=="friend",soon=i==5&&s[0]!="Crown",need=fr&&o&&!mine[k],dm=isDom?isDom(s[1]):dom.has(s[1]);
+ const k=key(s,i),o=own(k),fr=mode=="friend",soon=i==5&&s[0]!="Crown",need=fr&&o&&!mine[k],dm=o&&(isDom?isDom(k):dom.has(k));
  const wc=!fr&&who&&!o?FR.filter(f=>f.set.has(k)).length:0;
  const b=document.createElement(fr?"div":"button");
  b.className="tile vt"+(o?" on":" zero")+(soon?" soon":"")+(need?" need":"")+(fr?" ro":"");
  b.style.setProperty("--c",`var(--${s[2]})`);b.style.setProperty("--v",`var(--v${i})`);
  if(!fr)b.setAttribute("aria-pressed",o);
- b.setAttribute("aria-label",`${s[0]} ${V[i][0]}${o?", conseguido":""}${need?" (a ti te falta)":""}`);
- b.innerHTML=`<span class="pic"><img src="${img(s,i)}" alt="" loading="lazy"></span><b>${s[0]}${dm?' <span style="color:var(--Legendary)">★</span>':""}</b><span class="vl">${V[i][0]}</span>${o?`<span class="ck" aria-hidden="true">✓</span>`:""}${wc?`<span class="wc">${wc}</span>`:""}`;
+ b.setAttribute("aria-label",`${s[0]} ${V[i][0]}${o?", conseguido":""}${dm?", dominado":""}${need?" (a ti te falta)":""}`);
+ b.innerHTML=`<span class="pic"><img src="${img(s,i)}" alt="" loading="lazy"></span><b>${s[0]}</b><span class="vl">${V[i][0]}</span>${o?`<span class="ck" aria-hidden="true">✓</span>`:""}${dm?`<span class="sm" aria-hidden="true">★</span>`:""}${wc?`<span class="wc">${wc}</span>`:""}`;
  b.querySelector("img").onerror=e=>e.target.replaceWith(s[0][0]);
- if(!fr)b.onclick=()=>{if(who)return openWho(s,i);mine[k]=!mine[k];save();refresh()};
+ if(!fr)b.onclick=()=>tap(s,i);
  return b;
 }
 function openDet(s,mode){det={s,mode};renderDet();if(!$("dlg2").open)$("dlg2").showModal()}
@@ -368,10 +376,11 @@ function grid(){
  const g=$("grid");g.innerHTML="";g.className=view=="tiles"?"tiles":"grid";
  let shown=0;
  S.forEach(s=>{
-  const n=done(s),t=s[4].length,d=dom.has(s[1]);
-  if(filter=="todo"?n==t:filter=="dom"?!d:filter=="nodom"?d:(filter!="all"&&s[2]!=filter))return;
+  const n=done(s),t=s[4].length,ks=s[4].map((_,i)=>key(s,i));
+  const anyD=ks.some(k=>mine[k]&&dom.has(k)),anyND=ks.some(k=>mine[k]&&!dom.has(k));
+  if(filter=="todo"?n==t:filter=="dom"?!anyD:filter=="nodom"?!anyND:(filter!="all"&&s[2]!=filter))return;
   if(view=="tiles"&&gmode=="all"){
-   s[4].forEach((_,i)=>{if(filter=="todo"&&mine[key(s,i)])return;shown++;g.appendChild(vtile(s,i,k=>mine[k],"mine"))});
+   s[4].forEach((_,i)=>{const k=key(s,i);if(filter=="todo"&&mine[k]||filter=="dom"&&!(mine[k]&&dom.has(k))||filter=="nodom"&&!(mine[k]&&!dom.has(k)))return;shown++;g.appendChild(vtile(s,i,k=>mine[k],"mine"))});
    return;
   }
   shown++;
