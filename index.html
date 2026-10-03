@@ -156,6 +156,27 @@ dialog h3{font:700 16px var(--px)}
 .tile .sm{position:absolute;top:6px;left:6px;width:20px;height:20px;border-radius:7px;background:var(--Legendary);color:#2a1a00;font:700 12px/20px var(--body)}
 .tile .star{width:auto;padding:0 6px}
 body.mm .slot:not(.d):not(.ro),body.mm .tile.vt.zero:not(.ro){opacity:.35}
+.newb{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel);border:2px solid var(--Mythic);border-radius:16px;padding:12px 16px;margin:0 0 12px;text-align:left}
+.newb b{font-weight:700}.newb span{color:var(--mut);font-size:14px}
+.newb .pill,.nw{font:700 11px var(--px);background:var(--Mythic);color:#2a0716;border-radius:8px;padding:3px 8px;flex:none}
+.nw{position:absolute;bottom:6px;right:6px;font-size:9px;padding:2px 5px}
+.card .nw{position:static;margin-left:6px;vertical-align:2px}
+#dlgN{width:min(560px,94vw);max-height:86vh;overflow:auto}
+#dlgN h3{margin-bottom:4px}
+.wk{display:grid;gap:10px;margin:16px 0 0}
+.wk h4{font:700 13px var(--px);color:var(--Mythic);letter-spacing:.04em}
+.wk h4.soon{color:var(--mut)}
+.wk>p{font-size:14px;color:var(--mut)}
+.ns{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;background:var(--panel2);border:2px solid var(--line);border-left:5px solid var(--c);border-radius:14px;padding:8px 12px;text-align:left;width:100%;min-width:0}
+.ns .pic{width:56px;height:56px;display:grid;place-items:center;font:700 22px var(--px);color:var(--c)}
+.ns .pic img{width:100%;height:100%;object-fit:contain}
+.ns b{display:block;font:700 13px var(--px)}
+.ns small{display:block;color:var(--mut);font-size:13px}
+.ns .rr{font-size:12px;font-weight:700;color:var(--c)}
+.ns .pg{font:700 13px var(--px);color:var(--ok);font-variant-numeric:tabular-nums}
+div.ns{opacity:.75}
+.src{font-size:12px;color:var(--mut);margin-top:16px}
+.src a{color:var(--Rare)}
 #dlg2{padding:0;width:min(440px,94vw);background:transparent;border:0}
 #dlg2 .card{margin:0}
 #dlg2 .btn{width:100%;margin-top:10px}
@@ -200,6 +221,7 @@ body.mm .slot:not(.d):not(.ro),body.mm .tile.vt.zero:not(.ro){opacity:.35}
    </div>
   </div>
   <details><summary>¿Qué hace cada variante?</summary><div class="leg" id="leg"></div></details>
+  <button class="newb" id="newb"><span><b>Nuevos espíritus</b><br><span id="newsub"></span></span><span class="pill" id="newn">NUEVO</span></button>
   <div class="tools"><div class="seg" id="seg1"></div><div class="seg subseg" id="sub1"></div><span class="cap" id="cap1"></span></div>
   <div class="chips" id="chips"></div>
   <p class="hint" id="domhint" hidden><b style="color:var(--Legendary)">Modo dominar:</b> toca una casilla que ya tengas para marcarla como dominada o quitarle la ★. Vuelve a pulsar el botón para seguir marcando casillas normalmente.</p>
@@ -223,6 +245,7 @@ body.mm .slot:not(.d):not(.ro),body.mm .tile.vt.zero:not(.ro){opacity:.35}
  </section>
 </main>
 <dialog id="dlg2"><div id="d2"></div><button class="btn" id="dx2">Cerrar</button></dialog>
+<dialog id="dlgN" aria-labelledby="nT"><h3 id="nT">Nuevos espíritus</h3><p class="hint" style="margin:6px 0 0">Lo que llega cada semana. Toca uno para marcar tus variantes.</p><div id="nB"></div><p class="src">Fuentes: <a href="https://www.vice.com/en/article/all-42-new-fortnite-sprites-october-1-update/" target="_blank" rel="noopener">VICE</a> · <a href="https://www.theclick.gg/fortnite-october-1-sprites/" target="_blank" rel="noopener">The Click</a> · <a href="https://fnsprites.info/index.html" target="_blank" rel="noopener">fnsprites.info</a>. Las fechas futuras salen de datamines y pueden cambiar.</p><button class="btn" id="nX" style="width:100%;margin-top:14px">Cerrar</button></dialog>
 <dialog id="dlg"><h3 id="dt"></h3><div class="who" id="dw"></div><button class="btn" id="dx" style="width:100%">Cerrar</button></dialog>
 <script>
 const P="https://accountshark.net/images/sprites/thumb/";
@@ -280,9 +303,9 @@ const ALL=[];S.forEach(s=>s[4].forEach((_,i)=>ALL.push(key(s,i))));
 const REL=ALL.filter(k=>!(k.endsWith(":5")&&!k.startsWith("crown:")));
 const FR=[["Marta",98],["Álex",71],["Dani",54],["Lucía",33],["Pablo",17]].map(([name,n],j)=>({id:"f"+j,name,set:new Set(shuf(REL,rng(j*7919+13)).slice(0,n))}));
 FR.forEach((f,j)=>{const r=rng(j*31+5);f.dom=new Set([...f.set].filter(()=>r()<.3))});
-let gmode="group",me=null,mine=null,dom=null,view="list",filter="all",who=false,cur=null,only=false,det=null,mm=false;
+let gmode="group",me=null,mine=null,dom=null,view="tiles",filter="all",who=false,cur=null,only=false,det=null,mm=false;
 try{const d=JSON.parse(localStorage.getItem("dom4"));if(Array.isArray(d))dom=new Set(d)}catch(e){}
-try{view=localStorage.getItem("view3")||"list";gmode=localStorage.getItem("gmode3")||"group";me=localStorage.getItem("sess3")}catch(e){}
+try{view=localStorage.getItem("view4")||"tiles";gmode=localStorage.getItem("gmode3")||"group";me=localStorage.getItem("sess3")}catch(e){}
 try{mine=JSON.parse(localStorage.getItem("mine3"))}catch(e){}
 if(!mine){mine={};shuf(REL,rng(99)).slice(0,22).forEach(k=>mine[k]=true)}
 if(!dom)dom=new Set(Object.keys(mine).filter(k=>mine[k]).slice(0,6));
@@ -309,7 +332,7 @@ function card(s,own,mode,isDom){
   const cnt=!fr&&who&&!o?FR.filter(f=>f.set.has(k)).length:0;
   sl+=`<${tag} class="slot${o?" d":""}${m?" m":""}${soon?" soon":""}${need?" need":""}${fr?" ro":""}" data-i="${i}" style="--v:var(--v${i})" ${fr?"":`aria-pressed="${!!o}"`} aria-label="${s[0]} ${V[i][0]}${m?", dominado":""}${need?" (a ti te falta)":""}" title="${V[i][0]}"><img src="${img(s,i)}" alt="" loading="lazy">${cnt?`<span class="cnt">${cnt}</span>`:""}</${tag}>`;
  }
- c.innerHTML=`<div class="head"><div><h3>${s[0]}</h3><span class="rar">${RN[s[2]]} · ${n}/${t}</span></div><div class="acts">${dn?`<span class="domtag" title="Casillas dominadas">★ ${dn}</span>`:""}${fr?"":`<button class="all">${n==t?"Quitar":"Todas"}</button>`}</div></div><p class="eff">${s[3]}</p><div class="slots">${sl}</div><div class="lab">${SHORT.map(x=>`<span>${x}</span>`).join("")}</div>`;
+ c.innerHTML=`<div class="head"><div><h3>${s[0]}${NEWSET.has(s[1])?`<span class="nw">NUEVO</span>`:""}</h3><span class="rar">${RN[s[2]]} · ${n}/${t}</span></div><div class="acts">${dn?`<span class="domtag" title="Casillas dominadas">★ ${dn}</span>`:""}${fr?"":`<button class="all">${n==t?"Quitar":"Todas"}</button>`}</div></div><p class="eff">${s[3]}</p><div class="slots">${sl}</div><div class="lab">${SHORT.map(x=>`<span>${x}</span>`).join("")}</div>`;
  c.querySelectorAll("img").forEach(m=>m.onerror=()=>m.replaceWith(s[0][0]));
  if(!fr){
   c.querySelectorAll(".slot[data-i]").forEach(b=>b.onclick=()=>{
@@ -331,8 +354,8 @@ function chips(){
 const ICON={list:'<svg viewBox="0 0 14 14"><rect y="1" width="14" height="3" rx="1"/><rect y="5.5" width="14" height="3" rx="1"/><rect y="10" width="14" height="3" rx="1"/></svg>',tiles:'<svg viewBox="0 0 14 14"><rect width="4" height="4" rx="1"/><rect x="5" width="4" height="4" rx="1"/><rect x="10" width="4" height="4" rx="1"/><rect y="5" width="4" height="4" rx="1"/><rect x="5" y="5" width="4" height="4" rx="1"/><rect x="10" y="5" width="4" height="4" rx="1"/><rect y="10" width="4" height="4" rx="1"/><rect x="5" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg>'};
 function seg(){
  ["seg1","seg3"].forEach(id=>{
-  $(id).innerHTML=[["list","Lista"],["tiles","Cuadrícula"]].map(([v,t])=>`<button data-v="${v}" aria-pressed="${view==v}">${ICON[v]}${t}</button>`).join("");
-  $(id).querySelectorAll("button").forEach(b=>b.onclick=()=>{view=b.dataset.v;try{localStorage.setItem("view3",view)}catch(e){};seg();grid();if(cur)fgrid()});
+  $(id).innerHTML=[["tiles","Cuadrícula"],["list","Lista"]].map(([v,t])=>`<button data-v="${v}" aria-pressed="${view==v}">${ICON[v]}${t}</button>`).join("");
+  $(id).querySelectorAll("button").forEach(b=>b.onclick=()=>{view=b.dataset.v;try{localStorage.setItem("view4",view)}catch(e){};seg();grid();if(cur)fgrid()});
  });
  ["sub1","sub3"].forEach(id=>{
   const e=$(id);e.hidden=view!="tiles";
@@ -348,7 +371,7 @@ function tile(s,own,mode,isDom){
  const b=document.createElement("button");
  b.className="tile"+(n==t?" full":"")+(n?"":" zero")+(nd?" need":"");b.style.setProperty("--c",`var(--${s[2]})`);
  b.setAttribute("aria-label",`${s[0]}, ${n} de ${t} variantes${dn?`, ${dn} dominadas`:""}`);
- b.innerHTML=`<span class="pic"><img src="${img(s,best)}" alt="" loading="lazy"></span><b>${s[0]}</b><span class="tc">${n}/${t}</span><span class="dots">${s[4].map((_,i)=>`<i class="${own(key(s,i))?"on":""}${own(key(s,i))&&isD(key(s,i))?" m":""}${fr&&own(key(s,i))&&!mine[key(s,i)]?" nd":""}" style="--v:var(--v${i})"></i>`).join("")}</span>${dn?`<span class="star" aria-hidden="true">★${dn}</span>`:""}${wc?`<span class="wc" title="Variantes que te faltan y tiene algún amigo">${wc}</span>`:""}`;
+ b.innerHTML=`<span class="pic"><img src="${img(s,best)}" alt="" loading="lazy"></span><b>${s[0]}</b><span class="tc">${n}/${t}</span><span class="dots">${s[4].map((_,i)=>`<i class="${own(key(s,i))?"on":""}${own(key(s,i))&&isD(key(s,i))?" m":""}${fr&&own(key(s,i))&&!mine[key(s,i)]?" nd":""}" style="--v:var(--v${i})"></i>`).join("")}</span>${dn?`<span class="star" aria-hidden="true">★${dn}</span>`:""}${wc?`<span class="wc" title="Variantes que te faltan y tiene algún amigo">${wc}</span>`:""}${NEWSET.has(s[1])?`<span class="nw">NUEVO</span>`:""}`;
  b.querySelector("img").onerror=e=>e.target.replaceWith(s[0][0]);
  b.onclick=()=>openDet(s,mode);
  return b;
@@ -366,6 +389,26 @@ function vtile(s,i,own,mode,isDom){
  if(!fr)b.onclick=()=>tap(s,i);
  return b;
 }
+// ---- Nuevos espíritus por semana (añade aquí cada semana) ----
+// slug: espíritu ya en S; variants: índices de variante nuevos (omitir = todas)
+const NEWS=[
+ {week:"Semana del 1 de octubre",note:"Actualización Fortnitemares (v42.30).",items:[
+  {slug:"spooky-dash"},{slug:"vampire"},{slug:"the-deer"},
+  {slug:"dumpster-dive",extra:"Ganador del Design-A-Sprite."},
+  {slug:"crown",variants:[5],extra:"Trick or Treat Crown: se desbloquea si ya dominabas el Bounty Hunter Crown."}]},
+ {week:"Próximamente · 8 de octubre",soon:true,text:"Llegan las variantes Trick or Treat del resto de espíritus (Sonic, Crash, Morgana, Klombo…)."},
+ {week:"Próximamente · 15 de octubre",soon:true,upcoming:[["Honey","Invoca abejas."],["Obsession","Ayuda a conseguir espíritus."]]}
+];
+const NEWSET=new Set(NEWS[0].items.filter(x=>!x.variants).map(x=>x.slug));
+function newsBody(){
+ $("nB").innerHTML=NEWS.map((w,wi)=>`<section class="wk"><h4 class="${w.soon?"soon":""}">${w.week}</h4>${w.note?`<p>${w.note}</p>`:""}${w.text?`<p>${w.text}</p>`:""}${(w.items||[]).map((it,ii)=>{const s=S.find(x=>x[1]==it.slug),vs=it.variants||s[4].map((_,i)=>i),got=vs.filter(i=>mine[key(s,i)]).length;
+  return `<button class="ns" data-w="${wi}" data-i="${ii}" style="--c:var(--${s[2]})"><span class="pic"><img src="${img(s,vs[0])}" alt="" loading="lazy"></span><span><b>${it.variants?V[vs[0]][0]+" ":""}${s[0]}</b><span class="rr">${RN[s[2]]}</span><small>${s[3]}${it.extra?" "+it.extra:""}</small></span><span class="pg">${got}/${vs.length}</span></button>`}).join("")}${(w.upcoming||[]).map(([n,d])=>`<div class="ns" style="--c:var(--line)"><span class="pic">?</span><span><b>${n}</b><small>${d}</small></span><span></span></div>`).join("")}</section>`).join("");
+ $("nB").querySelectorAll("img").forEach(m=>m.onerror=()=>m.replaceWith("?"));
+ $("nB").querySelectorAll("button.ns").forEach(b=>b.onclick=()=>{const it=NEWS[b.dataset.w].items[b.dataset.i];$("dlgN").close();openDet(S.find(x=>x[1]==it.slug),"mine")});
+ const n=NEWS[0].items.length;$("newsub").textContent=`${NEWS[0].week}: ${n} novedades. Toca para verlas.`;$("newn").textContent=n+" NUEVOS";
+}
+$("newb").onclick=()=>{newsBody();$("dlgN").showModal()};
+$("nX").onclick=()=>$("dlgN").close();
 function openDet(s,mode){det={s,mode};renderDet();if(!$("dlg2").open)$("dlg2").showModal()}
 function renderDet(){
  const {s,mode}=det;$("d2").innerHTML="";
@@ -460,7 +503,7 @@ function enter(){
  $("uname").textContent=me;tab(1);stats();
 }
 $("out").onclick=()=>{me=null;try{localStorage.removeItem("sess3")}catch(e){};amode(false);enter();window.scrollTo(0,0)};
-seg();chips();grid();stats();amode(false);enter();
+seg();chips();grid();stats();newsBody();amode(false);enter();
 </script></body></html>
 
 </body></html>
